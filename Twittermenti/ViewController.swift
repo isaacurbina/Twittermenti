@@ -57,10 +57,9 @@ class ViewController: UIViewController {
 					tweets.append(tweetForClassification)
 				}
 			}
-			print("tweets: \(tweets.count)")
 			
 			let sentimentScore = self.getSentimentScore(tweets)
-			print("sentimentScore: \(sentimentScore)")
+			self.updateSentimentLabel(with: sentimentScore)
 			
 		}) { (error) in
 			print("There was an error with the Twitter API Request, \(error)")
@@ -80,11 +79,27 @@ class ViewController: UIViewController {
 					sentimentScore -= 1
 				}
 			}
-			
-			print(sentimentScore)
 		} catch {
 			print("Three was an error with making a prediction, \(error)")
 		}
 		return sentimentScore
+	}
+	
+	private func updateSentimentLabel(with sentimentScore: Int) {
+		if sentimentScore > 20 {
+			sentimentLabel.text = "😍"
+		} else if sentimentScore > 10 {
+			sentimentLabel.text = "😊"
+		} else if sentimentScore > 0 {
+			sentimentLabel.text = "🙂"
+		} else if sentimentScore == 0 {
+			sentimentLabel.text = "😐"
+		} else if sentimentScore > -10 {
+			sentimentLabel.text = "😕"
+		} else if sentimentScore > -20 {
+			sentimentLabel.text = "😡"
+		} else {
+			sentimentLabel.text = "🤮"
+		}
 	}
 }
