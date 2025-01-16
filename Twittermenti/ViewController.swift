@@ -31,25 +31,60 @@ class ViewController: UIViewController {
 	
 	override func viewDidLoad() {
 		super.viewDidLoad()
-		let prediction = try! sentimentClassifier.prediction(text: "@Apple is a terrible company!")
-		print(prediction.label)
-		
-		swifter.searchTweet(using: "@Apple", lang: "en", count: 100, success: { (results, metadata) in
-			var tweets = [String]()
-			
-			for i in 0..<100 {
-				if let tweet = results[i]["full_text"].string {
-					tweets.append(tweet)
-				}
-			}
-		}) { (error) in
-			print("There was an error with the Twitter API Request, \(error)")
-		}
+		updateUI()
 	}
 	
 	// MARK: - IBActions
 	
 	@IBAction func predictPressed(_ sender: Any) {
 		
+	}
+	
+	// MARK: - private functions
+	
+	private func updateUI() {
+		fetchTweets()
+		
+	}
+	
+	private func fetchTweets() {
+		swifter.searchTweet(using: "@Apple", lang: "en", count: 100, success: { (results, metadata) in
+			var tweets = [TweetSentimentClassifierInput]()
+			
+			for i in 0..<100 {
+				if let tweet = results[i]["full_text"].string {
+					let tweetForClassification = TweetSentimentClassifierInput(text: tweet)
+					tweets.append(tweetForClassification)
+				}
+			}
+			print("tweets: \(tweets.count)")
+			
+			let sentimentScore = self.getSentimentScore(tweets)
+			print("sentimentScore: \(sentimentScore)")
+			
+		}) { (error) in
+			print("There was an error with the Twitter API Request, \(error)")
+		}
+	}
+	
+	private func getSentimentScore(_ tweets : [TweetSentimentClassifierInput]) -> Int {
+		var sentimentScore = 0
+		do {
+			let predictions = try self.sentimentClassifier.predictions(inputs: tweets)
+			
+			for prediction in predictions {
+				let sentiment = prediction.label
+				if sentiment == "Pos" {
+					sentimentScore += 1
+				} else if sentiment == "Neg" {
+					sentimentScore -= 1
+				}
+			}
+			
+			print(sentimentScore)
+		} catch {
+			print("Three was an error with making a prediction, \(error)")
+		}
+		return sentimentScore
 	}
 }
