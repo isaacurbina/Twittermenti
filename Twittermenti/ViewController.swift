@@ -21,52 +21,43 @@ class ViewController: UIViewController {
 	
 	// MARK: - constants/objects
 	
+	private let tweetCount = 100
 	private var swifter: Swifter = Swifter(
 		consumerKey: "LTReJyreyyuz4SWjVABuA1WKI",
 		consumerSecret: "ajf107xfd6869heCG8Ptn8iztFHBWPlxLkFGvsmoEwI7MKZcz"
 	)
 	private let sentimentClassifier = TweetSentimentClassifier()
 	
-	// MARK: - UIViewController
-	
-	override func viewDidLoad() {
-		super.viewDidLoad()
-		updateUI()
-	}
-	
 	// MARK: - IBActions
 	
 	@IBAction func predictPressed(_ sender: Any) {
-		
+		if let searchText = textField.text {
+			fetchTweets(with: searchText)
+		}
 	}
 	
 	// MARK: - private functions
 	
-	private func updateUI() {
-		fetchTweets()
-		
-	}
-	
-	private func fetchTweets() {
-		swifter.searchTweet(using: "@Apple", lang: "en", count: 100, success: { (results, metadata) in
+	private func fetchTweets(with searchText: String) {
+		swifter.searchTweet(using: searchText, lang: "en", count: tweetCount, success: { (results, metadata) in
 			var tweets = [TweetSentimentClassifierInput]()
 			
-			for i in 0..<100 {
+			for i in 0..<self.tweetCount {
 				if let tweet = results[i]["full_text"].string {
 					let tweetForClassification = TweetSentimentClassifierInput(text: tweet)
 					tweets.append(tweetForClassification)
 				}
 			}
 			
-			let sentimentScore = self.getSentimentScore(tweets)
-			self.updateSentimentLabel(with: sentimentScore)
+			let sentimentScore = self.makePrediction(tweets)
+			self.updateUI(with: sentimentScore)
 			
 		}) { (error) in
 			print("There was an error with the Twitter API Request, \(error)")
 		}
 	}
 	
-	private func getSentimentScore(_ tweets : [TweetSentimentClassifierInput]) -> Int {
+	private func makePrediction(_ tweets : [TweetSentimentClassifierInput]) -> Int {
 		var sentimentScore = 0
 		do {
 			let predictions = try self.sentimentClassifier.predictions(inputs: tweets)
@@ -85,7 +76,7 @@ class ViewController: UIViewController {
 		return sentimentScore
 	}
 	
-	private func updateSentimentLabel(with sentimentScore: Int) {
+	private func updateUI(with sentimentScore: Int) {
 		if sentimentScore > 20 {
 			sentimentLabel.text = "😍"
 		} else if sentimentScore > 10 {
